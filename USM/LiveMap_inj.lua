@@ -17,6 +17,15 @@ local USM_lfs 	    = base.lfs		-- check if lfs is available in mission environme
 local frameNumber = 0
 
 function debugTestPrint(argument, time)
+
+    trigger.action.outText("Check for Moose...", 3)
+
+    if ENUMS == nil then
+        trigger.action.outText("Moose is not loaded!", 3)
+    else
+        trigger.action.outText("Moose is loaded!", 3)
+    end
+
     trigger.action.outText("debugTestPrint framenumber: "..frameNumber, 3)
 
     frameNumber = frameNumber + 1
@@ -24,7 +33,7 @@ function debugTestPrint(argument, time)
     return time + 5
 end
 
-timer.scheduleFunction(debugTestPrint, {}, timer.getTime() + 10)
+timer.scheduleFunction(debugTestPrint, {}, timer.getTime() + 1)
 
 --[[
 if env.mission.theatre == "Caucasus" then
