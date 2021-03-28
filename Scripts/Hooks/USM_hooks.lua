@@ -1,4 +1,5 @@
--- Ugly Server Mods -- HOOKS module
+-- Ugly Server Mods -- ideas an basic framework copied from DSMC (https://dsmcfordcs.wordpress.com/) 
+-- HOOKS module
 
 local ModuleName  	= "UGLY_ServerMods"
 local MainVersion 	= "1"
