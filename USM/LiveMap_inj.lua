@@ -414,7 +414,7 @@ end
 
 local frameNumber = 0
 
-LiveMap.waitForMoose = function (argument, time)
+LiveMap.startMapAfterMoose = function (argument, time)
 
     trigger.action.outText("Wait for Moose...", 2)
 
@@ -434,7 +434,7 @@ LiveMap.waitForMoose = function (argument, time)
     return time + 5
 end
 
-timer.scheduleFunction(LiveMap.waitForMoose, {}, timer.getTime() + 30)
+timer.scheduleFunction(LiveMap.startMapAfterMoose, {}, timer.getTime() + 30)
 
 
 

@@ -8,9 +8,9 @@ local Date			= "23/01/2021"
 
 -- ## LIBS
 module('UTIL', package.seeall)
-local require 		= _G.require		
+local require = _G.require		
 local io 			= require('io')
-local lfs 			= require('lfs')
+local lfs 		= require('lfs')
 local os 			= require('os')
 
 -- ## DEBUG
