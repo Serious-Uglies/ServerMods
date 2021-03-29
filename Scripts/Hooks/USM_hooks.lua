@@ -75,8 +75,11 @@ writeDebugBase(ModuleName .. ": main variables loaded")
 DCS_Multy					= nil
 DCS_Server				= nil
 
-USM_UseLiveMap		= true
+USM_UseLiveMap		= false
 USM_LiveMap				= nil
+
+USM_UseAutoATIS		= true
+USM_AutoATIS		  = nil
 
 writeDebugDetail(ModuleName .. ": local variables loaded")
 
@@ -109,7 +112,33 @@ function loadUSMHooks()
 		else
 			writeDebugBase(ModuleName .. ": unable to load LiveMap module")
 		end
+	else
+		if UTIL.fileExist(USMdir .. "LiveMap" .. ".lua") == false then
+			writeDebugBase(ModuleName .. ": module does not exist")
+		end
+		if USM_UseLiveMap == false then
+			writeDebugBase(ModuleName .. ": module should not be loaded")
+		end
 	end
+
+	-- ## USM AutiATIS
+	if UTIL.fileExist(USMdir .. "AutoATIS" .. ".lua") == true and USM_UseAutoATIS == true then
+		USM_AutoATIS	= require("AutoATIS")
+
+		if USM_AutoATIS then
+			writeDebugBase(ModuleName .. ": loaded AutoATIS module")
+		else
+			writeDebugBase(ModuleName .. ": unable to load AutoATIS module")
+		end
+	else
+		if UTIL.fileExist(USMdir .. "AutoATIS" .. ".lua") == false then
+			writeDebugBase(ModuleName .. ": module does not exist")
+		end
+		if USM_UseAutoATIS == false then
+			writeDebugBase(ModuleName .. ": module should not be loaded")
+		end
+	end
+
 end
 
 loadUSMHooks()
@@ -118,12 +147,12 @@ loadUSMHooks()
 -- callback on start
 function startUSMprocess()
 	if UTIL then
-		-- code from GOAP module
 		if USM_LiveMap then
 			writeDebugBase(ModuleName .. ": activating LiveMap")
 			USM_LiveMap.loadCode()
-		else
-			writeDebugBase(ModuleName .. ": LiveMap not required")	
+		elseif USM_AutoATIS then
+			writeDebugBase(ModuleName .. ": activating AutoATIS")
+			USM_AutoATIS.loadCode()
 		end					
 	else
 		writeDebugBase(ModuleName .. ": ERROR: UTIL module not available")

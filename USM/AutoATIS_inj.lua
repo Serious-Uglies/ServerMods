@@ -39,9 +39,6 @@ AutoATIS.AtisConf["Kutaisi"]["Tacan"] = 44
 -----------------------------------------------------------------------------------------
 -- Configuration
 
-
-local atisPosConfigFile = "C:\\temp\\Persistence\\ATIS_CaucasusPos.lua"
-
 local coalitions = {}
 coalitions[1] = coalition.side.RED
 coalitions[2] = coalition.side.BLUE
@@ -73,7 +70,7 @@ end
 -- place unit at predefined position depended of coalition
 AutoATIS.createAtisObjectForAirbase = function (_name, _coalition)
     local configName = "ATIS " .. _name
-    local _conf = AutoATIS.AtisStatics[configName]
+    local _conf = UglyAtisStatics[configName]
 
     if _conf ~= nil then
         local tmpGrp = {}
@@ -102,10 +99,8 @@ AutoATIS.createAtisObjectForAirbase = function (_name, _coalition)
 end
 
 AutoATIS.injectAtisToMap = function (_atisPosConfigFile)
-    if Ugly.file_exists(_atisPosConfigFile) then --Script has been run before, so we load previous data
-        env.info("UGLY: Existing database, loading atis conf from file.")
-
-        dofile(_atisPosConfigFile)
+    if UglyAtisStatics ~= nil then -- Data has been injected properly
+        env.info("UGLY: Existing database, using given atis conf.")
 
         for k = 1, #coalitions do
             local tmp = coalition.getAirbases(coalitions[k])
@@ -115,14 +110,19 @@ AutoATIS.injectAtisToMap = function (_atisPosConfigFile)
                 if AutoATIS.AtisConf[tmp[i]:getName()] ~= nil then
                     env.info("UGLY: Adding object to airfield: " .. tmp[i]:getName())
 
-                    -> only add object if not yet present
-                    findgroupbyname?!?
-                    AutoATIS.createAtisObjectForAirbase(tmp[i]:getName(), coalitions[k])
+                    local GroupObject = GROUP:FindByName( tmp[i]:getName() )
+                    if GroupObject == nil then
+                        AutoATIS.createAtisObjectForAirbase(tmp[i]:getName(), coalitions[k])
+                    else
+                        env.info("UGLY: Group exists - reusing: " .. tmp[i]:getName())
+                    end
                    
                     AutoATIS.AddAtis(tmp[i]:getName(), AutoATIS.AtisConf[tmp[i]:getName()])
                 end
             end
         end
+    else
+        env.info("Atis data not injected")
     end
 end  
   
@@ -135,6 +135,7 @@ AutoATIS.startMapAfterMoose = function (argument, time)
         trigger.action.outText("Wating for Moose to be loaded!", 3)
     else
         trigger.action.outText("Moose is loaded - Starting AutoATIS", 5)
+        env.info("Moose is loaded - Starting AutoATIS")
         AutoATIS.injectAtisToMap(atisPosConfigFile)
 
         return 0
