@@ -13,35 +13,48 @@ local require 		= base.require
 local io 			= require('io')
 local lfs 			= require('lfs')
 local os 			= require('os')
+local net 			= require('net')
 
-local atisPosConfigFile = "ATIS_CaucasusPos.lua"
+local atisPosConfigFile = "ATIS_CombinedPos.lua"
+local atisFreqConfigFile = "ATIS_Frequencies.json"
+
+-- table net.json2lua(string json )
 
 HOOK.writeDebugBase(ModuleName .. ": local required loaded")
 
 -- load AutoATIS
 function loadCode()
     HOOK.writeDebugBase(ModuleName .. ": loadCode opening AutoATIS_inj")  
-    local aic = io.open(lfs.writedir() .. "USM/" .. "AutoATIS_inj.lua", "r")
-    local acd = io.open(lfs.writedir() .. "USM/" .. "ATIS_CaucasusPos.lua", "r")
+    local autoAtisInject = io.open(lfs.writedir() .. "USM/" .. "AutoATIS_inj.lua", "r")
+    local autoAtisPos = io.open(lfs.writedir() .. "USM/" .. atisPosConfigFile, "r")
+    local autoAtisFreq = io.open(lfs.writedir() .. "USM/" .. atisFreqConfigFile, "r")
 
-    local EmbeddedcodeAutoATIS = nil
+    local AtisConfigCode = nil
     local AtisConfigData = nil
+    local AtisConfigFreq = nil
 
-    if aic then
+    if autoAtisInject then
         HOOK.writeDebugBase(ModuleName .. ": loadCode reading AutoATIS_inj") 
-        EmbeddedcodeAutoATIS = tostring(aic:read("*all"))
-        aic:close()
+        AtisConfigCode = tostring(autoAtisInject:read("*all"))
+        autoAtisInject:close()
 
-        HOOK.writeDebugBase(ModuleName .. ": Adding ATIS Conf to mission")  
         HOOK.writeDebugBase(ModuleName .. ": Loading ATIS file")  
-        AtisConfigData = tostring(acd:read("*all"))     
-        aic:close()
+        AtisConfigData = tostring(autoAtisPos:read("*all"))     
+        autoAtisPos:close()
 
-        HOOK.writeDebugBase(ModuleName .. ": Injecting ATIS file")  
+        HOOK.writeDebugBase(ModuleName .. ": Loading ATIS freqs")  
+        AtisConfigFreqJson = tostring(autoAtisFreq:read("*all"))     
+        AtisConfigFreq = net.json2lua(AtisConfigFreqJson)
+        autoAtisFreq:close()
+
+        HOOK.writeDebugBase(ModuleName .. ": Injecting ATIS freq data")  
+        UTIL.inJectCode("AtisConfigFreq", AtisConfigFreq)
+
+        HOOK.writeDebugBase(ModuleName .. ": Injecting ATIS config data")  
         UTIL.inJectCode("AtisConfigData", AtisConfigData)
 
-        HOOK.writeDebugBase(ModuleName .. ": loadCode loading AutoATIS_inj into the mission")  
-        UTIL.inJectCode("EmbeddedcodeAutoATIS", EmbeddedcodeAutoATIS)
+        HOOK.writeDebugBase(ModuleName .. ": Injecting ATIS conf")  
+        UTIL.inJectCode("AtisConfigCode", AtisConfigCode)
 
         HOOK.writeDebugBase(ModuleName .. ": loadCode done & Ready")  
     else
