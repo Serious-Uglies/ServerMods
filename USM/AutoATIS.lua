@@ -14,11 +14,32 @@ local io 			= require('io')
 local lfs 			= require('lfs')
 local os 			= require('os')
 local net 			= require('net')
+UTIL				= require("UTIL")
+
 
 local atisPosConfigFile = "ATIS_CombinedPos.lua"
 local atisFreqConfigFile = "ATIS_Frequencies.json"
 
 -- table net.json2lua(string json )
+
+--[[
+AtisConf = {}
+AtisConf["Batumi"] = {}
+AtisConf["Batumi"]["ATISFreq"] = 260.15
+AtisConf["Batumi"]["TowerFreqA"] = 260.100
+AtisConf["Batumi"]["TowerFreqB"] = 131.100
+AtisConf["Batumi"]["Tacan"] = 16
+AtisConf["Senaki-Kolkhi"] = {}
+AtisConf["Senaki-Kolkhi"]["ATISFreq"] = 251.150
+AtisConf["Senaki-Kolkhi"]["TowerFreqA"] = 251.100
+AtisConf["Senaki-Kolkhi"]["TowerFreqB"] = 121.900
+AtisConf["Senaki-Kolkhi"]["Tacan"] = 31
+AtisConf["Kutaisi"] = {}
+AtisConf["Kutaisi"]["ATISFreq"] = 270.650
+AtisConf["Kutaisi"]["TowerFreqA"] = 270.600
+AtisConf["Kutaisi"]["TowerFreqB"] = 125.500
+AtisConf["Kutaisi"]["Tacan"] = 44
+]]--
 
 HOOK.writeDebugBase(ModuleName .. ": local required loaded")
 
@@ -42,13 +63,20 @@ function loadCode()
         AtisConfigData = tostring(autoAtisPos:read("*all"))     
         autoAtisPos:close()
 
-        HOOK.writeDebugBase(ModuleName .. ": Loading ATIS freqs")  
-        AtisConfigFreqJson = tostring(autoAtisFreq:read("*all"))     
+        HOOK.writeDebugBase(ModuleName .. ": Loading ATIS freqs")
+        AtisConfigFreqJson = tostring(autoAtisFreq:read("*all"))
+        HOOK.writeDebugBase("AtisConfigFreqJson: " .. AtisConfigFreqJson)  
+
+        HOOK.writeDebugBase(ModuleName .. ": Converting from lua")
         AtisConfigFreq = net.json2lua(AtisConfigFreqJson)
+
+        HOOK.writeDebugBase(ModuleName .. ": IntegratedserializeWithCycles")
+        local AtisConfigFreqString = UTIL.IntegratedserializeWithCycles("AtisConfigFreq", AtisConfigFreq)
+        HOOK.writeDebugBase(ModuleName .. ": AtisConfigFreqString:\n" .. AtisConfigFreqString)
         autoAtisFreq:close()
 
         HOOK.writeDebugBase(ModuleName .. ": Injecting ATIS freq data")  
-        UTIL.inJectCode("AtisConfigFreq", AtisConfigFreq)
+        UTIL.inJectTable("AtisConfigFreq", AtisConfigFreq)
 
         HOOK.writeDebugBase(ModuleName .. ": Injecting ATIS config data")  
         UTIL.inJectCode("AtisConfigData", AtisConfigData)
@@ -64,9 +92,14 @@ function loadCode()
 end
 
 HOOK.writeDebugBase(ModuleName .. ": local function loadCode loaded")
-
 HOOK.writeDebugBase(ModuleName .. ": Loaded " .. MainVersion .. "." .. SubVersion .. "." .. Build .. ", released " .. Date)
 
+
+
+--[[
+        local convertedFreqList = IntegratedserializeWithCycles("AtisConfigFreq", AtisConfigFreq)
+        HOOK.writeDebugBase("convertedFreqList: " .. convertedFreqList)  
+]]--
 
 
 
