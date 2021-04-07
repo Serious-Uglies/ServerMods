@@ -114,10 +114,10 @@ function loadUSMHooks()
 		end
 	else
 		if UTIL.fileExist(USMdir .. "LiveMap" .. ".lua") == false then
-			writeDebugBase(ModuleName .. ": module does not exist")
+			writeDebugBase(ModuleName .. ": LiveMap does not exist")
 		end
 		if USM_UseLiveMap == false then
-			writeDebugBase(ModuleName .. ": module should not be loaded")
+			writeDebugBase(ModuleName .. ": LiveMap should not be loaded")
 		end
 	end
 
@@ -132,10 +132,10 @@ function loadUSMHooks()
 		end
 	else
 		if UTIL.fileExist(USMdir .. "AutoATIS" .. ".lua") == false then
-			writeDebugBase(ModuleName .. ": module does not exist")
+			writeDebugBase(ModuleName .. ": AutoATIS does not exist")
 		end
 		if USM_UseAutoATIS == false then
-			writeDebugBase(ModuleName .. ": module should not be loaded")
+			writeDebugBase(ModuleName .. ": AutoATIS should not be loaded")
 		end
 	end
 

@@ -61,11 +61,12 @@ function loadCode()
 
         HOOK.writeDebugBase(ModuleName .. ": Loading ATIS file")  
         AtisConfigData = tostring(autoAtisPos:read("*all"))     
+        HOOK.writeDebugBase(ModuleName .. ": AtisConfigData:\n" .. AtisConfigData)
         autoAtisPos:close()
 
         HOOK.writeDebugBase(ModuleName .. ": Loading ATIS freqs")
         AtisConfigFreqJson = tostring(autoAtisFreq:read("*all"))
-        HOOK.writeDebugBase("AtisConfigFreqJson: " .. AtisConfigFreqJson)  
+--        HOOK.writeDebugBase("AtisConfigFreqJson: " .. AtisConfigFreqJson)  
 
         HOOK.writeDebugBase(ModuleName .. ": Converting from lua")
         AtisConfigFreq = net.json2lua(AtisConfigFreqJson)

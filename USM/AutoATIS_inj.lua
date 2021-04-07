@@ -1,4 +1,4 @@
--- Ugly Server Mods - Live Map injected module
+-- Ugly Server Mods - AutoATIS injected module
 
 local ModuleName  	= "AutoATIS"
 local MainVersion 	= "1"
@@ -18,7 +18,7 @@ local USM_lfs 	    = base.lfs		-- check if lfs is available in mission environme
 
 -----------------------------------------------------------------------------------------
 -- Temp - Must be loaded from file/injected
-
+--[[
 AutoATIS.AtisConf = {}
 AutoATIS.AtisConf["Batumi"] = {}
 AutoATIS.AtisConf["Batumi"]["ATISFreq"] = 260.15
@@ -35,6 +35,7 @@ AutoATIS.AtisConf["Kutaisi"]["ATISFreq"] = 270.650
 AutoATIS.AtisConf["Kutaisi"]["TowerFreqA"] = 270.600
 AutoATIS.AtisConf["Kutaisi"]["TowerFreqB"] = 125.500
 AutoATIS.AtisConf["Kutaisi"]["Tacan"] = 44
+]]--
 
 -----------------------------------------------------------------------------------------
 -- Configuration
@@ -55,6 +56,113 @@ atisUnits[2]["type"] = "UH-1H" -- Blue ATIS unit
 atisUnits[2]["CountryID"] = 2 -- Blue ATIS country
 
 -----------------------------------------------------------------------------------------
+-- Debug code
+
+function IntegratedbasicSerialize(s)
+	if s == nil then
+		return "\"\""
+	else
+		if ((type(s) == 'number') or (type(s) == 'boolean') or (type(s) == 'function') or (type(s) == 'table') or (type(s) == 'userdata') ) then
+			return tostring(s)
+		elseif type(s) == 'string' then
+			return string.format('%q', s)
+		end
+	end
+end
+
+function Integratedserialize(name, value, level)
+	-----Based on ED's serialize_simple2
+	local basicSerialize = function (o)
+	  if type(o) == "number" then
+		return tostring(o)
+	  elseif type(o) == "boolean" then
+		return tostring(o)
+	  else -- assume it is a string
+		return IntegratedbasicSerialize(o)
+	  end
+	end
+
+	local serialize_to_t = function (name, value, level)
+	----Based on ED's serialize_simple2
+
+
+	  local var_str_tbl = {}
+	  if level == nil then level = "" end
+	  if level ~= "" then level = level.."  " end
+
+	  table.insert(var_str_tbl, level .. name .. " = ")
+
+	  if type(value) == "number" or type(value) == "string" or type(value) == "boolean" then
+		table.insert(var_str_tbl, basicSerialize(value) ..  ",\n")
+	  elseif type(value) == "table" then
+		  table.insert(var_str_tbl, "\n"..level.."{\n")
+
+		  for k,v in pairs(value) do -- serialize its fields
+			local key
+			if type(k) == "number" then
+			  key = string.format("[%s]", k)
+			else
+			  key = string.format("[%q]", k)
+			end
+
+			table.insert(var_str_tbl, Integratedserialize(key, v, level.."  "))
+
+		  end
+		  if level == "" then
+			table.insert(var_str_tbl, level.."} -- end of "..name.."\n")
+
+		  else
+			table.insert(var_str_tbl, level.."}, -- end of "..name.."\n")
+
+		  end
+	  else
+		print("Cannot serialize a "..type(value))
+	  end
+	  return var_str_tbl
+	end
+
+	local t_str = serialize_to_t(name, value, level)
+
+	return table.concat(t_str)
+end
+
+function IntegratedserializeWithCycles(name, value, saved)
+	local basicSerialize = function (o)
+		if type(o) == "number" then
+			return tostring(o)
+		elseif type(o) == "boolean" then
+			return tostring(o)
+		else -- assume it is a string
+			return IntegratedbasicSerialize(o)
+		end
+	end
+
+	local t_str = {}
+	saved = saved or {}       -- initial value
+	if ((type(value) == 'string') or (type(value) == 'number') or (type(value) == 'table') or (type(value) == 'boolean')) then
+		table.insert(t_str, name .. " = ")
+		if type(value) == "number" or type(value) == "string" or type(value) == "boolean" then
+			table.insert(t_str, basicSerialize(value) ..  "\n")
+		else
+
+			if saved[value] then    -- value already saved?
+				table.insert(t_str, saved[value] .. "\n")
+			else
+				saved[value] = name   -- save name for next time
+				table.insert(t_str, "{}\n")
+				for k,v in pairs(value) do      -- save its fields
+					local fieldname = string.format("%s[%s]", name, basicSerialize(k))
+					table.insert(t_str, IntegratedserializeWithCycles(fieldname, v, saved))
+				end
+			end
+		end
+		return table.concat(t_str)
+	else
+		return ""
+	end
+end
+
+-----------------------------------------------------------------------------------------
 -- Main code
 
 -- add atis to airport
@@ -70,7 +178,7 @@ end
 -- place unit at predefined position depended of coalition
 AutoATIS.createAtisObjectForAirbase = function (_name, _coalition)
     local configName = "ATIS " .. _name
-    local _conf = UglyAtisStatics[configName]
+    local _conf = Ugly.AtisStatics[configName]
 
     if _conf ~= nil then
         local tmpGrp = {}
@@ -98,8 +206,32 @@ AutoATIS.createAtisObjectForAirbase = function (_name, _coalition)
     end
 end
 
-AutoATIS.injectAtisToMap = function (_atisPosConfigFile)
-    if UglyAtisStatics ~= nil then -- Data has been injected properly
+AutoATIS.injectAtisToMap = function ()
+    if AtisStaticsPos ~= nil then -- Data has been injected properly
+        env.info("AtisStaticsPos injected - contains no. of elements: " .. tostring(#AtisStaticsPos))
+
+        for k,v in pairs(AtisStaticsPos) do
+            local AtisStaticsPosString = IntegratedserializeWithCycles("AtisStaticsPos - " .. k, AtisStaticsPos[k])
+            env.info("AtisStaticsPos - \n" .. AtisStaticsPosString)
+        end
+
+    else
+        env.info("AtisStaticsPos not injected")
+    end
+
+    if AtisConfigFreq ~= nil then -- Data has been injected properly
+        env.info("AtisConfigFreq injected - contains no. of elements: " .. tostring(#AtisConfigFreq))
+
+        for k,v in pairs(AtisConfigFreq) do
+            local AtisConfigFreqString = IntegratedserializeWithCycles("AtisConfigFreq - " .. k, AtisConfigFreq[k])
+            env.info("AtisConfigFreq - \n" .. AtisConfigFreqString)
+        end
+    else
+        env.info("AtisConfigFreq not injected")
+    end
+
+
+--[[    if Ugly.AtisConfigFreq ~= nil then -- Data has been injected properly
         env.info("UGLY: Existing database, using given atis conf.")
 
         for k = 1, #coalitions do
@@ -124,6 +256,8 @@ AutoATIS.injectAtisToMap = function (_atisPosConfigFile)
     else
         env.info("Atis data not injected")
     end
+]]
+
 end  
   
 local frameNumber = 0
@@ -136,7 +270,7 @@ AutoATIS.startMapAfterMoose = function (argument, time)
     else
         trigger.action.outText("Moose is loaded - Starting AutoATIS", 5)
         env.info("Moose is loaded - Starting AutoATIS")
-        AutoATIS.injectAtisToMap(atisPosConfigFile)
+        AutoATIS.injectAtisToMap()
 
         return 0
     end
