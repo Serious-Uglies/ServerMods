@@ -17,24 +17,39 @@ local USM_lfs 	    = base.lfs		-- check if lfs is available in mission environme
 -- The intervall in which the live map JSON data is exported
 
 -----------------------------------------------------------------------------------------
--- Temp - Must be loaded from file/injected
+-- Format of injected data
 --[[
-AutoATIS.AtisConf = {}
-AutoATIS.AtisConf["Batumi"] = {}
-AutoATIS.AtisConf["Batumi"]["ATISFreq"] = 260.15
-AutoATIS.AtisConf["Batumi"]["TowerFreqA"] = 260.100
-AutoATIS.AtisConf["Batumi"]["TowerFreqB"] = 131.100
-AutoATIS.AtisConf["Batumi"]["Tacan"] = 16
-AutoATIS.AtisConf["Senaki-Kolkhi"] = {}
-AutoATIS.AtisConf["Senaki-Kolkhi"]["ATISFreq"] = 251.150
-AutoATIS.AtisConf["Senaki-Kolkhi"]["TowerFreqA"] = 251.100
-AutoATIS.AtisConf["Senaki-Kolkhi"]["TowerFreqB"] = 121.900
-AutoATIS.AtisConf["Senaki-Kolkhi"]["Tacan"] = 31
-AutoATIS.AtisConf["Kutaisi"] = {}
-AutoATIS.AtisConf["Kutaisi"]["ATISFreq"] = 270.650
-AutoATIS.AtisConf["Kutaisi"]["TowerFreqA"] = 270.600
-AutoATIS.AtisConf["Kutaisi"]["TowerFreqB"] = 125.500
-AutoATIS.AtisConf["Kutaisi"]["Tacan"] = 44
+
+AtisStaticsPos:
+AtisStaticsPos["ATIS Mozdok"] = {} ---Caucasus
+AtisStaticsPos["ATIS Mozdok"]["shape_name"] = "UH-1H"
+AtisStaticsPos["ATIS Mozdok"]["CountryID"] = 2
+AtisStaticsPos["ATIS Mozdok"]["y"] = 835129.25
+AtisStaticsPos["ATIS Mozdok"]["x"] = -83958.40625
+AtisStaticsPos["ATIS Mozdok"]["CategoryID"] = 3
+AtisStaticsPos["ATIS Mozdok"]["heading"] = 4.555309243523
+AtisStaticsPos["ATIS Mozdok"]["type"] = "UH-1H"
+AtisStaticsPos["ATIS Mozdok"]["name"] = "ATIS Mozdok"
+AtisStaticsPos["ATIS Mozdok"]["CoalitionID"] = 2
+AtisStaticsPos["ATIS Mozdok"]["dead"] = false
+
+
+AtisConfigFreq:
+  "Abu Al-Duhur 09": {
+    "Map-Spezifisch": "Syria",
+    "TACAN": "´",
+    "I(C)LS": "´",
+    "Primär": 136200,
+    "Sekundär": 230800,
+    "ATIS": 230850,
+    "Runway": "09",
+    "DCS-AirfieldName": "Abu al-Duhur",
+    "MagVar": 5,
+    "Comments": "",
+    "KI ATC UHF": 250350,
+    "KI ATC VHF": 122200,
+    "Land": "Syrien"
+  }
 ]]--
 
 -----------------------------------------------------------------------------------------
@@ -54,6 +69,8 @@ atisUnits[1]["CountryID"] = 0 -- Red ATIS country
 atisUnits[2] = {}
 atisUnits[2]["type"] = "UH-1H" -- Blue ATIS unit
 atisUnits[2]["CountryID"] = 2 -- Blue ATIS country
+
+local AutoAtisConf = {}
 
 -----------------------------------------------------------------------------------------
 -- Debug code
@@ -171,14 +188,16 @@ AutoATIS.AddAtis = function (_name, _atisConf)
     newAtis:SetRadioRelayUnitName("ATIS " .. _name)
     newAtis:SetTowerFrequencies({_atisConf["TowerFreqA"], _atisConf["TowerFreqB"]})
     newAtis:SetImperialUnits()
-    newAtis:SetTACAN(_atisConf["Tacan"])
+    if _atisConf["Tacan"] ~= "" then
+        newAtis:SetTACAN(_atisConf["Tacan"])
+    end
     newAtis:Start()
 end
 
 -- place unit at predefined position depended of coalition
-AutoATIS.createAtisObjectForAirbase = function (_name, _coalition)
+AutoATIS.CreateAtisObjectForAirbase = function (_name, _coalition)
     local configName = "ATIS " .. _name
-    local _conf = Ugly.AtisStatics[configName]
+    local _conf = AtisStaticsPos[configName]
 
     if _conf ~= nil then
         local tmpGrp = {}
@@ -210,54 +229,89 @@ AutoATIS.injectAtisToMap = function ()
     if AtisStaticsPos ~= nil then -- Data has been injected properly
         env.info("AtisStaticsPos injected - contains no. of elements: " .. tostring(#AtisStaticsPos))
 
+--[[
         for k,v in pairs(AtisStaticsPos) do
             local AtisStaticsPosString = IntegratedserializeWithCycles("AtisStaticsPos - " .. k, AtisStaticsPos[k])
             env.info("AtisStaticsPos - \n" .. AtisStaticsPosString)
         end
-
+]]
     else
         env.info("AtisStaticsPos not injected")
     end
 
     if AtisConfigFreq ~= nil then -- Data has been injected properly
-        env.info("AtisConfigFreq injected - contains no. of elements: " .. tostring(#AtisConfigFreq))
-
-        for k,v in pairs(AtisConfigFreq) do
-            local AtisConfigFreqString = IntegratedserializeWithCycles("AtisConfigFreq - " .. k, AtisConfigFreq[k])
-            env.info("AtisConfigFreq - \n" .. AtisConfigFreqString)
-        end
-    else
-        env.info("AtisConfigFreq not injected")
-    end
-
-
---[[    if Ugly.AtisConfigFreq ~= nil then -- Data has been injected properly
         env.info("UGLY: Existing database, using given atis conf.")
 
+        -- Convert to more usable format
+        for k,v in pairs(AtisConfigFreq) do
+            local nextAirfieldConf = AtisConfigFreq[k]
+            
+            local nextAirfieldName = AtisConfigFreq[k]["DCS-AirfieldName"]
+            env.info("UGLY: Checking config for: " .. nextAirfieldName)
+
+            local currentAtisConf = AutoAtisConf[nextAirfieldName]
+            if currentAtisConf == nil then
+                env.info("UGLY: Adding new config for: " .. nextAirfieldName)
+
+                local airfieldConf = {}
+
+                local atisFreq = 0
+                if tonumber(nextAirfieldConf ["ATIS"]) ~= nil then
+                    atisFreq = tonumber(nextAirfieldConf ["ATIS"]) / 1000
+                end
+                local towerAFreq = 0
+                if tonumber(nextAirfieldConf ["Primär"]) ~= nil then
+                    towerAFreq = tonumber(nextAirfieldConf ["Primär"]) / 1000
+                end
+                local towerBFreq = 0
+                if tonumber(nextAirfieldConf ["Sekundär"]) ~= nil then
+                    towerBFreq = tonumber(nextAirfieldConf ["Sekundär"]) / 1000
+                end
+
+                local tacanFreq = ""
+                if nextAirfieldConf ["TACAN"] ~= nil then
+                    tacanFreq = string.gsub(nextAirfieldConf ["TACAN"], "X", "")
+                end
+
+                airfieldConf["ATISFreq"] = atisFreq
+                env.info("UGLY: ATISFreq: " .. tostring(atisFreq))
+                airfieldConf["TowerFreqA"] = towerAFreq
+                env.info("UGLY: TowerFreqA: " .. tostring(towerAFreq))
+                airfieldConf["TowerFreqB"] = towerBFreq
+                env.info("UGLY: TowerFreqB: " .. tostring(towerBFreq))
+                airfieldConf["Tacan"] = tacanFreq
+                env.info("UGLY: Tacan: " .. tacanFreq)
+
+                AutoAtisConf[nextAirfieldName] = airfieldConf
+            end
+
+            -- TODO: Check for new runway with different ILS
+        end
+
         for k = 1, #coalitions do
-            local tmp = coalition.getAirbases(coalitions[k])
-            for i=1, #tmp do
+            local airbaseMap = coalition.getAirbases(coalitions[k])
+            for i=1, #airbaseMap do
                 env.info("UGLY: Adding objects to coalition: " .. coalitions[k])
 
-                if AutoATIS.AtisConf[tmp[i]:getName()] ~= nil then
-                    env.info("UGLY: Adding object to airfield: " .. tmp[i]:getName())
+                if AutoAtisConf[airbaseMap[i]:getName()] ~= nil then
+                    env.info("UGLY: Adding object to airfield: " .. airbaseMap[i]:getName())
 
-                    local GroupObject = GROUP:FindByName( tmp[i]:getName() )
+                    local GroupObject = GROUP:FindByName( "ATIS " .. airbaseMap[i]:getName() )
                     if GroupObject == nil then
-                        AutoATIS.createAtisObjectForAirbase(tmp[i]:getName(), coalitions[k])
+                        AutoATIS.CreateAtisObjectForAirbase(airbaseMap[i]:getName(), coalitions[k])
                     else
-                        env.info("UGLY: Group exists - reusing: " .. tmp[i]:getName())
+                        env.info("UGLY: Group exists - reusing: " .. airbaseMap[i]:getName())
                     end
-                   
-                    AutoATIS.AddAtis(tmp[i]:getName(), AutoATIS.AtisConf[tmp[i]:getName()])
+                    
+                    AutoATIS.AddAtis(airbaseMap[i]:getName(), AutoAtisConf[airbaseMap[i]:getName()])
+                else
+                    env.info("UGLY: No frequencies for: " .. airbaseMap[i]:getName())
                 end
             end
         end
     else
         env.info("Atis data not injected")
     end
-]]
-
 end  
   
 local frameNumber = 0
@@ -340,3 +394,36 @@ else
 end
 ]]--
 
+
+--[[
+AutoATIS.AtisConf = {}
+AutoATIS.AtisConf["Batumi"] = {}
+AutoATIS.AtisConf["Batumi"]["ATISFreq"] = 260.15
+AutoATIS.AtisConf["Batumi"]["TowerFreqA"] = 260.100
+AutoATIS.AtisConf["Batumi"]["TowerFreqB"] = 131.100
+AutoATIS.AtisConf["Batumi"]["Tacan"] = 16
+AutoATIS.AtisConf["Batumi"]["Runway"] = {}
+AutoATIS.AtisConf["Batumi"]["Runway"]["9"]["Heading"] = 9
+AutoATIS.AtisConf["Batumi"]["Runway"]["9"]["ILS"] = 123.4
+AutoATIS.AtisConf["Batumi"]["Runway"]["27"]["Heading"] = 27
+AutoATIS.AtisConf["Batumi"]["Runway"]["27"]["ILS"] = 123.5
+
+
+AtisConfigFreq:
+  "Abu Al-Duhur 09": {
+    "Map-Spezifisch": "Syria",
+    "TACAN": "´",
+    "I(C)LS": "´",
+    "Primär": 136200,
+    "Sekundär": 230800,
+    "ATIS": 230850,
+    "Runway": "09",
+    "DCS-AirfieldName": "Abu al-Duhur",
+    "MagVar": 5,
+    "Comments": "",
+    "KI ATC UHF": 250350,
+    "KI ATC VHF": 122200,
+    "Land": "Syrien"
+  }
+
+]]
