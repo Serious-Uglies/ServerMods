@@ -219,7 +219,7 @@ AutoATIS.CreateAtisObjectForAirbase = function (_name, _coalition)
         tmpGrp["units"][1]["name"] = _conf["name"]
         tmpGrp["units"][1]["shape_name"] = atisUnits[_coalition]["type"]
         tmpGrp["units"][1]["heading"] = _conf["heading"]
-        --  
+
         coalition.addGroup(tmpGrp["CountryID"], tmpGrp["CategoryID"], tmpGrp)
         env.info("UGLY: Adding group as ATIS to: " .. tostring(_coalition))
     end
@@ -314,13 +314,14 @@ AutoATIS.injectAtisToMap = function ()
     end
 end  
   
-local frameNumber = 0
+--local checkNumber = 0
 AutoATIS.startMapAfterMoose = function (argument, time)
 
-    trigger.action.outText("Wait for Moose...", 2)
+--    trigger.action.outText("AutoATIS is waiting for Moose to be loaded...", 2)
 
     if ENUMS == nil then
-        trigger.action.outText("Wating for Moose to be loaded!", 3)
+--        trigger.action.outText("AutoATIS is waiting for Moose to be loaded...", 1)
+        env.info("AutoATIS is waiting for Moose to be loaded...")
     else
         trigger.action.outText("Moose is loaded - Starting AutoATIS", 5)
         env.info("Moose is loaded - Starting AutoATIS")
@@ -329,15 +330,11 @@ AutoATIS.startMapAfterMoose = function (argument, time)
         return 0
     end
 
-    trigger.action.outText("debugTestPrint framenumber: "..frameNumber, 3)
-
-    frameNumber = frameNumber + 1
+--    trigger.action.outText("debugTestPrint checkNumber: "..checkNumber, 3)
+--    checkNumber = checkNumber + 1
 
     return time + 5
 end
-
-
-
 
 timer.scheduleFunction(AutoATIS.startMapAfterMoose, {}, timer.getTime() + 30)
 
