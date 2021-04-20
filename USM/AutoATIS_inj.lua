@@ -318,6 +318,13 @@ end
 AutoATIS.startMapAfterMoose = function (argument, time)
 
 --    trigger.action.outText("AutoATIS is waiting for Moose to be loaded...", 2)
+    if UglyStartAtis == nil then
+        env.info("AutoATIS is configured to be off...")
+        return 0
+    else
+        env.info("AutoATIS is configured to be on, so wating for Moose to be loaded...")
+    end
+
 
     if ENUMS == nil then
 --        trigger.action.outText("AutoATIS is waiting for Moose to be loaded...", 1)
@@ -336,7 +343,7 @@ AutoATIS.startMapAfterMoose = function (argument, time)
     return time + 5
 end
 
-timer.scheduleFunction(AutoATIS.startMapAfterMoose, {}, timer.getTime() + 30)
+timer.scheduleFunction(AutoATIS.startMapAfterMoose, {}, timer.getTime() + 10)
 
 
 -----------------------------------------------------------------------------------------
