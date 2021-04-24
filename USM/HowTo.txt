@@ -1,0 +1,2 @@
+- Copy USM and Script directory into server's "Saved Games\DCS\" directory
+- Add MissionStart trigger with doScript = "UglyStartAtis = {}"

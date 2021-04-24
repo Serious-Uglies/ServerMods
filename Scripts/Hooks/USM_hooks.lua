@@ -159,10 +159,33 @@ function startUSMprocess()
 	end
 end
 
+function ReportMissionLoadedToDiscord(message)
+	local url = "https://discord.com/api/webhooks/834098193351442443/ytzUZ2tWcwA3F_NIs52bjpxiZMq1bO8Qa1ORjhb0tcH6S2ug4viSBca27PaOlW-G21A7"
+	local botname = "Server Status Report"
+	local text = 'C:\\temp\\DiscordSendWebhook.exe -m "Current Mission Loaded: **' .. message .. '**" -w "' .. url .. '" -n "' .. botname .. '"'
+	
+	writeDebugBase(ModuleName .. text)
+	os.execute(text)
+end
+
+function ReportStatusToDiscord(message)
+	local url = "https://discord.com/api/webhooks/834098193351442443/ytzUZ2tWcwA3F_NIs52bjpxiZMq1bO8Qa1ORjhb0tcH6S2ug4viSBca27PaOlW-G21A7"
+	local botname = "Server Status Report"
+	local text = 'C:\\temp\\DiscordSendWebhook.exe -m "**' .. message .. '**" -w "' .. url .. '" -n "' .. botname .. '"'
+	
+	writeDebugBase(ModuleName .. text)
+	os.execute(text)
+end
+
 --## CALLBACKS
 function USM.onSimulationStart()
 	writeDebugBase(ModuleName .. ": Calling onSimulationStart...")
 	startUSMprocess()
+end
+
+function USM.onMissionLoadEnd()
+	writeDebugBase(ModuleName .. ": Calling onMissionLoadEnd..." .. DCS.getMissionName())
+	ReportMissionLoadedToDiscord(DCS.getMissionName())
 end
 
 function USM.onTriggerMessage(message)	
