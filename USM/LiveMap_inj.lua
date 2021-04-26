@@ -13,6 +13,12 @@ LiveMap             = {}
 local base 		    = _G
 local USM_io 	    = base.io  	-- check if io is available in mission environment
 local USM_lfs 	    = base.lfs		-- check if lfs is available in mission environment
+local require       = base.require
+
+package.path = package.path..";.\\LuaSocket\\?.lua"
+package.cpath = package.cpath..";.\\LuaSocket\\?.dll"
+
+local socket        = require('socket')
 
 -- The intervall in which the live map JSON data is exported
 LiveMap.ExportMapInterval = 5
@@ -23,20 +29,49 @@ LiveMap.exportRedUnits = true
 LiveMap.exportBlueStatics = true
 --LiveMap.maxDeadPilots = 20
 
+
+-----------------------------------------------------------------------------------------
+-- Init
+
+local function log(msg)
+    env.info("LiveMap (t=" .. timer.getTime() .. "): " .. msg)
+  end
+
+
+LiveMap.IPAddress = "127.0.0.1"
+LiveMap.Port = 31090
+LiveMap.MySocket = nil
+
 -----------------------------------------------------------------------------------------
 -- Helper
 
 LiveMap.writemission = function (_data, _fileName)--Function for saving to file (commonly found)
+
+    if LiveMap.MySocket == nil then
+        log("Starting LiveMap socket")
+
+        LiveMap.MySocket = socket.try(socket.connect(LiveMap.IPAddress, LiveMap.Port))
+        LiveMap.MySocket:setoption("tcp-nodelay",true)
+    
+        log("Starting LiveMap socket established")
+    end
+
+--    socket.try(LiveMap.MySocket:send(string.format(_data)))
+    socket.try(LiveMap.MySocket:send(_data))
+
+--[[
     local File = io.open(_fileName, "w")
   
     if File ~= nil then
-      File:write(_data)
-      File:close()
+        File:write(_data)
+        File:close()
     else
-      env.info("Ugly.writemission: Cannot access or write - " .. _fileName)
+        env.info("Ugly.writemission: Cannot access or write - " .. _fileName)
     end
-  end
-  
+]]--
+end
+
+
 LiveMap.writeDataset = function (_desc, _icon, _lon, _lat)
 
 	local descString = _desc:gsub("%\n", "<br>")

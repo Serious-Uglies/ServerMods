@@ -75,10 +75,10 @@ writeDebugBase(ModuleName .. ": main variables loaded")
 DCS_Multy					= nil
 DCS_Server				= nil
 
-USM_UseLiveMap		= false
+USM_UseLiveMap		= true
 USM_LiveMap				= nil
 
-USM_UseAutoATIS		= true
+USM_UseAutoATIS		= false
 USM_AutoATIS		  = nil
 
 writeDebugDetail(ModuleName .. ": local variables loaded")
